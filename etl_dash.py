@@ -68,7 +68,7 @@ try:
         df_ordenado = df_vagas.sort_values(['visualizacao', 'click_link'], ascending=[False, False])
         
         for _, vaga in df_ordenado.iterrows():
-            link_vaga = f"https://fastvagas.vercel.app/}"
+            link_vaga = f"https://fastvagas.vercel.app"
             
             # Garantir que todos os valores são serializáveis
             salario_numero = vaga.get('salario_numero')
@@ -465,19 +465,19 @@ try:
             
             metricsGrid.innerHTML = `
                 <div class="metric-card">
-                    <div class="metric-label">Total de Vagas</div>
+                    <div class="metric-label">Vagas Vistas</div>
                     <div class="metric-value">${{metrics.total_vagas}}</div>
-                    <div class="metric-label">Vagas ativas</div>
+                    <div class="metric-label">Quantidade de Vagas</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Visualizações</div>
+                    <div class="metric-label">Total de Visualização</div>
                     <div class="metric-value">${{metrics.total_visualizacoes}}</div>
-                    <div class="metric-label">Total de views</div>
+                    <div class="metric-label">Click Total em Vagas</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Cliques</div>
-                    <div class="metric-value">${{metrics.total_cliques}}</div>
                     <div class="metric-label">Engajamento</div>
+                    <div class="metric-value">${{metrics.total_cliques}}</div>
+                    <div class="metric-label">Cliques no Link da Vaga</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">CTR Médio</div>
