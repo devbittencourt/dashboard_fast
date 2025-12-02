@@ -522,6 +522,33 @@ const html = `
             border-top: 1px solid var(--gray-light);
         }
         
+        /* Novos estilos para gráficos de 30 dias */
+        .charts-30-days {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+        
+        .chart-30-days-container {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-30-days-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--dark);
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--gray-light);
+        }
+        
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -541,6 +568,24 @@ const html = `
             
             .card {
                 padding: 20px 15px;
+            }
+            
+            .charts-30-days {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-30-days-container {
+                padding: 20px 15px;
+            }
+            .bar-label-top {
+                text-align: center;
+                font-size: 0.8rem;
+                color: var(--gray);
+                margin-bottom: 8px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
         }
     </style>
@@ -596,14 +641,53 @@ const html = `
                     </div>
                 </div>
                 
-                <div class="chart-container">
+                  <div class="chart-container">
                     <div class="chart-title">Visitas por Hora do Dia</div>
-                    ${metricasHome.dados_graficos?.visitas_por_hora ? createBarChart(
-                        metricasHome.dados_graficos.visitas_por_hora.labels, 
-                        metricasHome.dados_graficos.visitas_por_hora.data,
-                        'visitas-hora-chart',
-                        '#4f46e5'
-                    ) : '<p>Dados não disponíveis</p>'}
+                    ${metricasHome.dados_graficos?.visitas_por_hora ? (() => {
+                        // Formatar labels: remover os minutos e manter apenas a hora
+                        const originalLabels = metricasHome.dados_graficos.visitas_por_hora.labels;
+                        const formattedLabels = originalLabels.map(label => {
+                            // Extrair apenas a hora (parte antes dos :)
+                            return label.split(':')[0];
+                        });
+                        
+                        // Criar HTML personalizado para ter labels na parte superior
+                        const maxValue = Math.max(...metricasHome.dados_graficos.visitas_por_hora.data);
+                        const chartHeight = 200;
+                        const data = metricasHome.dados_graficos.visitas_por_hora.data;
+                        
+                        let barsHtml = '';
+                        formattedLabels.forEach((label, index) => {
+                            const value = data[index];
+                            const height = maxValue > 0 ? (value / maxValue) * chartHeight : 0;
+                            const barWidth = 100 / formattedLabels.length;
+                            
+                            barsHtml += `
+                                <div class="bar-container" style="width: ${barWidth}%">
+                                    <div class="bar-label-top">${label}</div>
+                                    <div class="bar" style="height: ${height}px; background-color: #4f46e5"></div>
+                                </div>
+                            `;
+                        });
+                        
+                        return `
+                            <div class="chart-bars" style="height: ${chartHeight}px; position: relative;">
+                                ${barsHtml}
+                            </div>
+                            <style>
+                                .bar-label-top {
+                                    text-align: center;
+                                    font-size: 0.8rem;
+                                    color: var(--gray);
+                                    margin-bottom: 8px;
+                                    height: 20px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                }
+                            </style>
+                        `;
+                    })() : '<p>Dados não disponíveis</p>'}
                 </div>
             </div>
             
@@ -691,6 +775,159 @@ const html = `
                             <strong>Frequência:</strong> ${metricasPublicar.estatisticas_avancadas?.frequencia_publicacao || 'N/A'}
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- NOVA SEÇÃO: Gráficos dos Últimos 30 Dias -->
+        <h2 class="section-title">
+            <i class="fas fa-chart-area"></i>
+            Análise dos Últimos 30 Dias
+        </h2>
+        
+        <!-- Gráfico de Visitas - Linha inteira -->
+        <div class="chart-30-days-container" style="margin-bottom: 25px;">
+            <div class="chart-30-days-title">
+                <i class="fas fa-home" style="color: #4f46e5;"></i>
+                Visitas por 30 Dias
+            </div>
+            ${metricasHome.dados_graficos?.visitas_por_dia_30_dias ? (() => {
+                const labels = metricasHome.dados_graficos.visitas_por_dia_30_dias.labels;
+                const data = metricasHome.dados_graficos.visitas_por_dia_30_dias.data;
+                const maxValue = Math.max(...data);
+                const chartHeight = 200;
+                
+                let barsHtml = '';
+                labels.forEach((label, index) => {
+                    const value = data[index];
+                    const height = maxValue > 0 ? (value / maxValue) * chartHeight : 0;
+                    const barWidth = 100 / labels.length;
+                    // Extrair apenas o dia (parte antes da /)
+                    const dayOnly = label.split('/')[0];
+                    
+                    barsHtml += `
+                        <div class="bar-container" style="width: ${barWidth}%">
+                            <div class="bar-label-top">${dayOnly}</div>
+                            <div class="bar" style="height: ${height}px; background-color: #4f46e5; position: relative;">
+                                ${value > 0 ? `<div class="bar-value-bottom">${value}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                return `
+                    <div class="chart-bars" style="height: ${chartHeight}px; position: relative;">
+                        ${barsHtml}
+                    </div>
+                    <style>
+                        .bar-value-bottom {
+                            position: absolute;
+                            bottom: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            color: #4f46e5;
+                            background: rgba(255, 255, 255, 0.9);
+                            padding: 2px 5px;
+                            border-radius: 3px;
+                            white-space: nowrap;
+                        }
+                    </style>
+                `;
+            })() : '<p>Dados de visitas por 30 dias não disponíveis</p>'}
+            <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: var(--radius);">
+                <p style="margin: 0; font-size: 0.9rem; color: var(--gray);">
+                    <strong>Total no período:</strong> ${formatNumber(metricasHome.metricas_resumo?.visitas_semana || 0)} visitas<br>
+                    <strong>Média diária:</strong> ${formatNumber(Math.round((metricasHome.metricas_resumo?.visitas_semana || 0) / 30))} visitas/dia
+                </p>
+            </div>
+        </div>
+        
+        <!-- Cadastros e Publicações - Gráfico combinado na linha abaixo -->
+        <div class="chart-30-days-container">
+            <div class="chart-30-days-title">
+                <i class="fas fa-chart-bar"></i>
+                Cadastros e Publicações por 30 Dias
+            </div>
+            ${metricasCadastrar.dados_graficos?.cadastros_por_dia_30_dias && metricasPublicar.dados_graficos?.publicacoes_por_dia_30_dias ? (() => {
+                const labels = metricasCadastrar.dados_graficos.cadastros_por_dia_30_dias.labels;
+                const cadastrosData = metricasCadastrar.dados_graficos.cadastros_por_dia_30_dias.data;
+                const publicacoesData = metricasPublicar.dados_graficos.publicacoes_por_dia_30_dias.data;
+                
+                // Encontrar o valor máximo entre os dois conjuntos de dados
+                const maxCadastro = Math.max(...cadastrosData);
+                const maxPublicacao = Math.max(...publicacoesData);
+                const maxValue = Math.max(maxCadastro, maxPublicacao, 1); // Mínimo 1 para evitar divisão por zero
+                const chartHeight = 200;
+                
+                let barsHtml = '';
+                labels.forEach((label, index) => {
+                    const cadastroValue = cadastrosData[index];
+                    const publicacaoValue = publicacoesData[index];
+                    const barWidth = 100 / labels.length;
+                    // Extrair apenas o dia (parte antes da /)
+                    const dayOnly = label.split('/')[0];
+                    
+                    // Calcular alturas das barras
+                    const cadastroHeight = maxValue > 0 ? (cadastroValue / maxValue) * chartHeight : 0;
+                    const publicacaoHeight = maxValue > 0 ? (publicacaoValue / maxValue) * chartHeight : 0;
+                    
+                    barsHtml += `
+                        <div style="width: ${barWidth}%; display: flex; flex-direction: column; align-items: center; height: ${chartHeight + 30}px;">
+                            <div style="margin-bottom: 5px; font-size: 0.75rem; color: var(--gray); height: 20px; display: flex; align-items: center;">${dayOnly}</div>
+                            <div style="display: flex; justify-content: center; gap: 2px; width: 100%; height: ${chartHeight}px; align-items: flex-start;">
+                                <!-- Barra de Cadastros (verde) - COMEÇA DO TOPO -->
+                                <div style="height: ${cadastroHeight}px; background-color: #10b981; width: 45%; position: relative; border-radius: 0 0 2px 2px; margin-top: 0;">
+                                    ${cadastroValue > 0 ? `<div style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 600; color: #10b981; background: rgba(255, 255, 255, 0.9); padding: 1px 4px; border-radius: 2px; white-space: nowrap;">${cadastroValue}</div>` : ''}
+                                </div>
+                                <!-- Barra de Publicações (laranja) - COMEÇA DO TOPO -->
+                                <div style="height: ${publicacaoHeight}px; background-color: #f59e0b; width: 45%; position: relative; border-radius: 0 0 2px 2px; margin-top: 0;">
+                                    ${publicacaoValue > 0 ? `<div style="position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; font-weight: 600; color: #f59e0b; background: rgba(255, 255, 255, 0.9); padding: 1px 4px; border-radius: 2px; white-space: nowrap;">${publicacaoValue}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                return `
+                    <div style="margin-top: 20px; margin-bottom: 20px;">
+                        <!-- LEGENDA ACIMA DO GRÁFICO -->
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; justify-content: center;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div style="width: 12px; height: 12px; background-color: #10b981; border-radius: 2px;"></div>
+                                <span style="font-size: 0.85rem; color: var(--gray);">Cadastros</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div style="width: 12px; height: 12px; background-color: #f59e0b; border-radius: 2px;"></div>
+                                <span style="font-size: 0.85rem; color: var(--gray);">Publicações</span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; height: ${chartHeight}px; padding: 0 5px;">
+                            ${barsHtml}
+                        </div>
+                    </div>
+                `;
+            })() : '<p>Dados de cadastros e publicações por 30 dias não disponíveis</p>'}
+            
+            <!-- LINHA VAZIA ENTRE GRÁFICO E ESTATÍSTICAS -->
+            <div style="height: 25px;"></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 0;">
+                <div style="padding: 10px; background: #f8f9fa; border-radius: var(--radius);">
+                    <p style="margin: 0; font-size: 0.9rem; color: var(--gray);">
+                        <strong>Cadastros</strong><br>
+                        <strong>Total:</strong> ${formatNumber(metricasCadastrar.metricas_resumo?.cadastros_semana || 0)}<br>
+                        <strong>Média diária:</strong> ${formatNumber(Math.round((metricasCadastrar.metricas_resumo?.cadastros_semana || 0) / 30))}
+                    </p>
+                </div>
+                <div style="padding: 10px; background: #f8f9fa; border-radius: var(--radius);">
+                    <p style="margin: 0; font-size: 0.9rem; color: var(--gray);">
+                        <strong>Publicações</strong><br>
+                        <strong>Total:</strong> ${formatNumber(metricasPublicar.metricas_resumo?.publicacoes_semana || 0)}<br>
+                        <strong>Média diária:</strong> ${formatNumber(Math.round((metricasPublicar.metricas_resumo?.publicacoes_semana || 0) / 30))}
+                    </p>
                 </div>
             </div>
         </div>
